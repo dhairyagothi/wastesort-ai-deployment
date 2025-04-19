@@ -1,9 +1,11 @@
+streamlit
 tensorflow
 numpy
-matplotlib
-pandas
-opencv-python-headless
-scikit-learn
+opencv-python
 Pillow
-streamlit
-kagglehub
+pandas
+scikit-learn
+matplotlib
+yolo
+ultralytics
+streamlit_tensorflow
