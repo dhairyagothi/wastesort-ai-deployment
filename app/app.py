@@ -9,9 +9,7 @@ import logging
 import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
-from vit_keras.layers import ClassToken, TransformerBlock
 import gdown
-from colorama import Fore, init
 
 # --- Streamlit UI Styling ---
 st.markdown("""
@@ -33,7 +31,6 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # --- Init & Logging ---
-init(autoreset=True)
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(message)s")
 
 # --- Waste Labels ---
@@ -49,8 +46,7 @@ def load_vit_model():
         output_path = "final_vit_waste_classification_model.h5"
         if not tf.io.gfile.exists(output_path):
             gdown.download(f"https://drive.google.com/uc?id={file_id}", output_path, quiet=False)
-        with tf.keras.utils.custom_object_scope({'ClassToken': ClassToken, 'TransformerBlock': TransformerBlock}):
-            model = tf.keras.models.load_model(output_path, compile=False)
+        model = tf.keras.models.load_model(output_path, compile=False)
         logging.info("✅ ViT Model loaded!")
         return model
     except Exception as e:
