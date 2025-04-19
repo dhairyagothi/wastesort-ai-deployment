@@ -132,17 +132,33 @@ detected_waste_counter = Counter()
 # --- Upload Image ---
 if option == "📂 Upload Image":
     uploaded_image = st.file_uploader("Upload image...", type=["jpg", "jpeg", "png"])
+    
     if uploaded_image and st.button("🔍 Detect & Predict"):
-        file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
-        img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-        img_out, waste_types = detect_and_classify_objects(img)
-        st.image(img_out, channels="BGR", use_container_width=True)
-        st.write("### Waste Detected:")
-        for wt in waste_types:
-            if isinstance(wt, tuple):
-                waste, conf = wt
-                st.write(f"✅ {waste}: {conf:.2f}%")
-                st.session_state.waste_counts[waste] += 1
+        try:
+            file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
+            img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
+
+            if img is None:
+                st.error("❌ Failed to decode the image. Please upload a valid image file.")
+            else:
+                img_out, waste_types = detect_and_classify_objects(img)
+
+                if img_out is not None and isinstance(img_out, np.ndarray):
+                    st.image(img_out, channels="BGR", use_container_width=True)
+                    st.write("### Waste Detected:")
+                    for wt in waste_types:
+                        if isinstance(wt, tuple):
+                            waste, conf = wt
+                            st.write(f"✅ {waste}: {conf:.2f}%")
+                            st.session_state.waste_counts[waste] += 1
+                        elif isinstance(wt, str):
+                            st.write(f"✅ {wt}")
+                            st.session_state.waste_counts[wt] += 1
+                else:
+                    st.error("❌ Processed image is invalid.")
+        except Exception as e:
+            st.error(f"❌ An unexpected error occurred: {e}")
+
 
 # --- Upload Video ---
 elif option == "📹 Upload Video":
