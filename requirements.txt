@@ -13,3 +13,5 @@ seaborn
 tensorflow
 vit-keras
 asyncio
+vit_keras.layers
+tensorflow-addons
