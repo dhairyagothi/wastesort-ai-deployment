@@ -46,12 +46,17 @@ def load_vit_model():
         output_path = "final_vit_waste_classification_model.h5"
         if not tf.io.gfile.exists(output_path):
             gdown.download(f"https://drive.google.com/uc?id={file_id}", output_path, quiet=False)
+
+        if not tf.io.gfile.exists(output_path):
+            raise FileNotFoundError("Model file not found after download.")
+
         model = tf.keras.models.load_model(output_path, compile=False)
         logging.info("✅ ViT Model loaded!")
         return model
     except Exception as e:
         logging.error(f"❌ Failed to load ViT: {e}")
         return None
+
 
 # --- Load YOLOv8 ---
 @st.cache_resource
@@ -69,6 +74,9 @@ yolo_model = load_yolo_model()
 
 # --- Waste Classification ---
 def classify_waste(image):
+    if vit_model is None:
+        logging.error("❌ ViT model is not loaded.")
+        return "Unknown", 0.0
     try:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
         image = cv2.resize(image, (224, 224)) / 255.0
@@ -81,6 +89,7 @@ def classify_waste(image):
     except Exception as e:
         logging.error(f"❌ ViT classification error: {e}")
         return "Unknown", 0.0
+
 
 # --- Object Detection + Classification ---
 def detect_and_classify_objects(frame):
