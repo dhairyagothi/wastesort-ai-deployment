@@ -87,7 +87,8 @@ def detect_and_classify_objects(frame):
     waste_types = []
 
     if yolo_model is None:
-        return frame, [classify_waste(frame)]
+        waste_types.append(classify_waste(frame))
+        return frame, waste_types
 
     results = yolo_model(frame)
     boxes = results[0].boxes.xyxy if results and results[0].boxes else []
@@ -137,9 +138,11 @@ if option == "📂 Upload Image":
         img_out, waste_types = detect_and_classify_objects(img)
         st.image(img_out, channels="BGR", use_container_width=True)
         st.write("### Waste Detected:")
-        for waste, conf in waste_types:
-            st.write(f"✅ {waste}: {conf:.2f}%")
-            st.session_state.waste_counts[waste] += 1
+        for wt in waste_types:
+            if isinstance(wt, tuple):
+                waste, conf = wt
+                st.write(f"✅ {waste}: {conf:.2f}%")
+                st.session_state.waste_counts[waste] += 1
 
 # --- Upload Video ---
 elif option == "📹 Upload Video":
@@ -156,8 +159,10 @@ elif option == "📹 Upload Video":
                 break
             frame_out, waste_types = detect_and_classify_objects(frame)
             stframe.image(frame_out, channels="BGR", use_container_width=True)
-            for waste, _ in waste_types:
-                st.session_state.waste_counts[waste] += 1
+            for wt in waste_types:
+                if isinstance(wt, tuple):
+                    waste, _ = wt
+                    st.session_state.waste_counts[waste] += 1
         cap.release()
 
 # --- Live Camera ---
@@ -190,8 +195,10 @@ elif option == "📸 Live USB Camera":
                 break
             frame_out, waste_types = detect_and_classify_objects(frame)
             stframe.image(frame_out, channels="BGR", use_container_width=True)
-            for waste, _ in waste_types:
-                st.session_state.waste_counts[waste] += 1
+            for wt in waste_types:
+                if isinstance(wt, tuple):
+                    waste, _ = wt
+                    st.session_state.waste_counts[waste] += 1
         cap.release()
 
 # --- Summary ---
