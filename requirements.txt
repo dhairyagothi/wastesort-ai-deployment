@@ -8,3 +8,4 @@ scikit-learn
 matplotlib
 ultralytics
 vit-keras
+torch==1.10.0
