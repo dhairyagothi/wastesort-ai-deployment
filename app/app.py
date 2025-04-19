@@ -7,23 +7,6 @@ import logging
 import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
-import serial
-
-# Replace with your actual Arduino port and baud rate
-try:
-    arduino = serial.Serial('COM3', 9600, timeout=1)
-    logging.info("✅ Arduino connected successfully!")
-except Exception as e:
-    arduino = None
-    logging.warning(f"⚠️ Could not connect to Arduino: {e}")
-
-def send_to_arduino(signal):
-    if arduino and arduino.is_open:
-        try:
-            arduino.write(signal.encode())
-            logging.info(f"➡️ Sent to Arduino: {signal}")
-        except Exception as e:
-            logging.error(f"❌ Failed to send data to Arduino: {e}")
 
 # Logging setup
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -144,8 +127,6 @@ def detect_and_classify_objects(frame):
         confidence = max(wet_confidence, dry_confidence)
 
         waste_types.append((detected_class, round(confidence, 2)))
-        # Send signal to Arduino
-        send_to_arduino("wet" if detected_class == "Wet Waste" else "dry")
 
         # Draw box
         color = colors.get(detected_class, (255, 255, 255))
@@ -213,103 +194,29 @@ elif option == "📹 Upload Video":
             frame_out, waste_types = detect_and_classify_objects(frame)
             detected_waste_counter.update([wt[0] for wt in waste_types])
             stframe.image(frame_out, channels="BGR", use_container_width=True)
-        cap.release()
-        st.session_state["stop_video"] = False
 
 elif option == "📸 Live Camera":
-    if "live_detecting" not in st.session_state:
-        st.session_state.live_detecting = False
-    if "last_detected" not in st.session_state:
-        st.session_state.last_detected = []
-    if "waste_counts" not in st.session_state:
-        st.session_state.waste_counts = {"Dry Waste": 0, "Wet Waste": 0}
+    run_detection = st.button("Start Detection")
+    stop_button = st.button("⏹ Stop Detection")
+    if run_detection:
+        st.session_state.detection_active = True
 
-    col1, col2 = st.columns(2)
-    if col1.button("🔍 Start Detecting"):
-        st.session_state.live_detecting = True
-        st.session_state.waste_counts = {"Dry Waste": 0, "Wet Waste": 0}  # Reset counts
-    if col2.button("⏹ Stop Detecting"):
-        st.session_state.live_detecting = False
+    if stop_button:
+        st.session_state.detection_active = False
+        st.write("Detection stopped.")
 
-    stframe = st.empty()
-    graph_placeholder = st.empty()
-    list_placeholder = st.empty()
-    summary_placeholder = st.empty()
-
-    if st.session_state.live_detecting:
-        cap = cv2.VideoCapture(camera_index)
-
-        while st.session_state.live_detecting and cap.isOpened():
-            ret, frame = cap.read()
+    if st.session_state.detection_active:
+        capture = cv2.VideoCapture(camera_index)
+        while True:
+            ret, frame = capture.read()
             if not ret:
+                st.write("Error with camera feed.")
                 break
-
             frame_out, waste_types = detect_and_classify_objects(frame)
+            detected_waste_counter.update([wt[0] for wt in waste_types])
+            st.image(frame_out, channels="BGR", use_container_width=True)
 
-            if waste_types != st.session_state.last_detected:
-                st.session_state.last_detected = waste_types
-
-                # Update counts
-                for waste, _ in waste_types:
-                    if waste in st.session_state.waste_counts:
-                        st.session_state.waste_counts[waste] += 1
-
-                stframe.image(frame_out, channels="BGR", use_container_width=True)
-
-                with list_placeholder.container():
-                    st.markdown("### 📋 Detected Waste List")
-                    for waste, conf in waste_types:
-                        st.write(f"✅ {waste}: {conf:.2f}% confidence")
-
-    # Show summary and graph even after stopping
-    with summary_placeholder.container():
-        total_wet = st.session_state.waste_counts.get("Wet Waste", 0)
-        total_dry = st.session_state.waste_counts.get("Dry Waste", 0)
-        st.markdown(f"### ✅ Summary: {total_wet} Wet Waste | {total_dry} Dry Waste")
-
-    with graph_placeholder.container():
-        st.markdown("### 📊 Live Waste Summary")
-        fig, ax = plt.subplots(figsize=(5, 3))
-        labels = list(st.session_state.waste_counts.keys())
-        values = list(st.session_state.waste_counts.values())
-        colors = ['blue' if label == 'Dry Waste' else 'green' for label in labels]
-        ax.bar(labels, values, color=colors)
-        ax.set_ylabel("Count")
-        ax.set_xlabel("Waste Type")
-        ax.set_title("Waste Type Distribution")
-        st.pyplot(fig)
-
-    if st.session_state.live_detecting:
-        cap.release()
-
-
-
-
-# Summary Chart
-if detected_waste_counter:
-    st.subheader("📊 Waste Classification Summary")
-    fig, ax = plt.subplots(figsize=(5, 3))
-
-    labels = list(detected_waste_counter.keys())
-    values = list(detected_waste_counter.values())
-
-    # Dynamically assign color based on waste type
-    color_map = {"Dry Waste": "blue", "Wet Waste": "green"}
-    colors = [color_map.get(label, "gray") for label in labels]  # default to gray if unknown
-
-    ax.bar(labels, values, color=colors)
-    ax.set_ylabel("Count")
-    ax.set_xlabel("Waste Type")
-    ax.set_title("Waste Type Distribution")
-
-    st.pyplot(fig)
-    st.success("♻️ Proper disposal of waste helps keep the environment clean!")
-
-
-# Guide
-st.subheader("🗑️ Waste Disposal Guide")
-for waste_type, info in waste_info.items():
-    st.write(f"### {waste_type}")
-    st.write(info["description"])
-    st.write(f"**Dispose in:** {info['bin']}")
-    st.image(info["bin_image"], width=150)
+# Display statistics
+st.write("### Waste Statistics")
+st.write(f"🟢 Wet Waste: {detected_waste_counter['Wet Waste']} items")
+st.write(f"🔵 Dry Waste: {detected_waste_counter['Dry Waste']} items")
