@@ -10,6 +10,7 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
 import gdown
+import os
 
 # --- Streamlit UI Styling ---
 st.markdown("""
@@ -42,13 +43,18 @@ colors = {"Wet Waste": (0, 255, 0), "Dry Waste": (255, 0, 0)}
 @st.cache_resource
 def load_vit_model():
     try:
-        file_id = "11xpp3FDyNfqGTvCrviSm9amM6cItoNNt"  # File ID from your Google Drive link
+        file_id = "11xpp3FDyNfqGTvCrviSm9amM6cItoNNt"
         output_path = "final_vit_waste_classification_model.h5"
-        if not tf.io.gfile.exists(output_path):
+        if not os.path.exists(output_path):
+            logging.info("🔄 Downloading ViT model...")
             gdown.download(f"https://drive.google.com/uc?id={file_id}", output_path, quiet=False)
-        model = tf.keras.models.load_model(output_path, compile=False)
-        logging.info("✅ ViT Model loaded!")
-        return model
+        if os.path.exists(output_path):
+            model = tf.keras.models.load_model(output_path, compile=False)
+            logging.info("✅ ViT Model loaded!")
+            return model
+        else:
+            logging.error("❌ ViT model file not found.")
+            return None
     except Exception as e:
         logging.error(f"❌ Failed to load ViT: {e}")
         return None
