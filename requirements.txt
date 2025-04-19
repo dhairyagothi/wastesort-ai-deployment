@@ -11,3 +11,5 @@ gdown
 scikit-learn
 seaborn
 tensorflow
+vit-keras
+asyncio
