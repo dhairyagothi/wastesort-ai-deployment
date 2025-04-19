@@ -6,6 +6,4 @@ Pillow
 pandas
 scikit-learn
 matplotlib
-yolo
 ultralytics
-streamlit_tensorflow
