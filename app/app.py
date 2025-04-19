@@ -42,20 +42,17 @@ colors = {"Wet Waste": (0, 255, 0), "Dry Waste": (255, 0, 0)}
 @st.cache_resource
 def load_vit_model():
     try:
-        file_id = "11xpp3FDyNfqGTvCrviSm9amM6cItoNNt"
+        file_id = "11xpp3FDyNfqGTvCrviSm9amM6cItoNNt"  # File ID from your Google Drive link
         output_path = "final_vit_waste_classification_model.h5"
         if not tf.io.gfile.exists(output_path):
             gdown.download(f"https://drive.google.com/uc?id={file_id}", output_path, quiet=False)
-
-        if not tf.io.gfile.exists(output_path):
-            raise FileNotFoundError("Model file not found after download.")
-
         model = tf.keras.models.load_model(output_path, compile=False)
         logging.info("✅ ViT Model loaded!")
         return model
     except Exception as e:
         logging.error(f"❌ Failed to load ViT: {e}")
         return None
+
 
 
 # --- Load YOLOv8 ---
