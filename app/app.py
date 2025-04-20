@@ -92,7 +92,7 @@ def detect_and_classify_objects(frame):
         return frame, waste_types
 
     results = yolo_model(frame)
-    boxes = results[0].boxes.xyxy if results and results[0].boxes.xyxy.shape[0] > 0 else []
+    boxes = results[0].boxes.xyxy.cpu().numpy() if results and hasattr(results[0].boxes, 'xyxy') else []
 
     if len(boxes) == 0:
         # Preprocess full frame for ViT
