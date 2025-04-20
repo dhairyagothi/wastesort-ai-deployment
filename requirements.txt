@@ -1,8 +1,8 @@
-streamlit==1.32.2
-tensorflow==2.11.0
-vit-keras==0.1.0
-opencv-python-headless==4.9.0.80
-matplotlib==3.7.1
-numpy==1.23.5
-ultralytics==8.0.238
-Pillow==9.4.0
+streamlit
+tensorflow
+vit-keras
+opencv-python-headless
+matplotlib
+numpy
+ultralytics
+Pillow
