@@ -1,9 +1,8 @@
-streamlit>=1.30.0
-ultralytics
-torch
-torchvision
+streamlit
 tensorflow
-tensorflow-addons
-Pillow
+opencv-python-headless
+ultralytics
+vit-keras
+matplotlib
 numpy
-opencv-python
+Pillow
