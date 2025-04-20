@@ -1,11 +1,12 @@
+tensorflow-cpu
+tensorflow-addons
+keras
+vit-keras
 torch
 torchvision
 Pillow
 opencv-python
-streamlit
-tensorflow-cpu
-keras
 numpy
-vit-keras
 ultralytics
+streamlit
 streamlit-webrtc
