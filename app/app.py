@@ -7,7 +7,7 @@ import logging
 import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
-
+st.set_page_config(page_title="♻️ WasteSort AI", layout="centered")
 # Disable GPU for TensorFlow
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
@@ -98,8 +98,7 @@ def detect_and_classify_objects(frame):
 
     return frame, waste_types
 
-# UI
-st.set_page_config(page_title="♻️ WasteSort AI", layout="centered")
+
 st.title("♻️ WasteSort AI")
 st.write("Classify waste into **dry** and **wet** using AI. Upload images/videos or use your webcam (locally only).")
 
