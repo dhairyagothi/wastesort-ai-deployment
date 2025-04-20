@@ -2,6 +2,8 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 import cv2
+import keras
+from vit_keras import vit
 import tempfile
 import logging
 import matplotlib.pyplot as plt
