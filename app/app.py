@@ -4,7 +4,6 @@ import numpy as np
 import cv2
 import tempfile
 import logging
-import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
 
@@ -15,20 +14,6 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 class_labels = ["Dry Waste", "Wet Waste"]
 bin_mapping = {"Wet Waste": "🚮 Green Bin", "Dry Waste": "🗑️ Blue Bin"}
 colors = {"Wet Waste": (0, 255, 0), "Dry Waste": (255, 0, 0)}
-
-# Waste disposal guide
-waste_info = {
-    "Dry Waste": {
-        "description": "Dry waste includes paper, plastic, metal, glass, and cardboard. These should be recycled properly.",
-        "bin": "Blue Bin (Recyclable Waste)",
-        "bin_image": "assets/blue_bin.png"
-    },
-    "Wet Waste": {
-        "description": "Wet waste includes food scraps, vegetable peels, and garden waste. It should be composted or disposed in a wet waste bin.",
-        "bin": "Green Bin (Organic Waste)",
-        "bin_image": "assets/green_bin.png"
-    }
-}
 
 @st.cache_resource
 def load_vit_model():
@@ -56,55 +41,30 @@ vit_model = load_vit_model()
 yolo_model = load_yolo_model()
 
 def classify_waste(image):
-    if vit_model is None:
-        return "Unknown", 0.0
-
     try:
-        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)  # Ensure RGB
-        image = cv2.resize(image, (224, 224)) / 255.0   # Normalize
-        image = np.expand_dims(image, axis=0)           # Add batch dim
-
+        image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
+        image = cv2.resize(image, (224, 224)) / 255.0
+        image = np.expand_dims(image, axis=0)
         prediction = vit_model.predict(image, verbose=0)[0]
         wet_confidence = prediction[0] * 100
         dry_confidence = (1 - prediction[0]) * 100
         detected_class = "Wet Waste" if wet_confidence > dry_confidence else "Dry Waste"
-        confidence = max(wet_confidence, dry_confidence)
-        return detected_class, round(confidence, 2)
-
+        return detected_class, round(max(wet_confidence, dry_confidence), 2)
     except Exception as e:
         logging.error(f"❌ Classification Error: {e}")
         return "Unknown", 0.0
 
 def detect_and_classify_objects(frame):
     waste_types = []
-
-    if yolo_model is None:
-        # Preprocess full frame for ViT
-        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image_resized = cv2.resize(image_rgb, (224, 224)) / 255.0
-        image_input = np.expand_dims(image_resized, axis=0)
-        prediction = vit_model.predict(image_input, verbose=0)[0]
-        wet_confidence = prediction[0] * 100
-        dry_confidence = (1 - prediction[0]) * 100
-        detected_class = "Wet Waste" if wet_confidence > dry_confidence else "Dry Waste"
-        confidence = max(wet_confidence, dry_confidence)
-        waste_types.append((detected_class, round(confidence, 2)))
+    if yolo_model is None or vit_model is None:
         return frame, waste_types
 
     results = yolo_model(frame)
     boxes = results[0].boxes.xyxy.cpu().numpy() if results and hasattr(results[0].boxes, 'xyxy') else []
 
     if len(boxes) == 0:
-        # Preprocess full frame for ViT
-        image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        image_resized = cv2.resize(image_rgb, (224, 224)) / 255.0
-        image_input = np.expand_dims(image_resized, axis=0)
-        prediction = vit_model.predict(image_input, verbose=0)[0]
-        wet_confidence = prediction[0] * 100
-        dry_confidence = (1 - prediction[0]) * 100
-        detected_class = "Wet Waste" if wet_confidence > dry_confidence else "Dry Waste"
-        confidence = max(wet_confidence, dry_confidence)
-        waste_types.append((detected_class, round(confidence, 2)))
+        detected_class, confidence = classify_waste(frame)
+        waste_types.append((detected_class, confidence))
         return frame, waste_types
 
     for box in boxes:
@@ -116,19 +76,9 @@ def detect_and_classify_objects(frame):
         if cropped.size == 0:
             continue
 
-        # Proper preprocessing for ViT
-        cropped_rgb = cv2.cvtColor(cropped, cv2.COLOR_BGR2RGB)
-        cropped_resized = cv2.resize(cropped_rgb, (224, 224)) / 255.0
-        input_tensor = np.expand_dims(cropped_resized, axis=0)
-        prediction = vit_model.predict(input_tensor, verbose=0)[0]
-        wet_confidence = prediction[0] * 100
-        dry_confidence = (1 - prediction[0]) * 100
-        detected_class = "Wet Waste" if wet_confidence > dry_confidence else "Dry Waste"
-        confidence = max(wet_confidence, dry_confidence)
+        detected_class, confidence = classify_waste(cropped)
+        waste_types.append((detected_class, confidence))
 
-        waste_types.append((detected_class, round(confidence, 2)))
-
-        # Draw box
         color = colors.get(detected_class, (255, 255, 255))
         label = f"{detected_class} ({confidence:.1f}%)"
         cv2.rectangle(frame, (x1, y1), (x2, y2), color, 2)
@@ -136,87 +86,73 @@ def detect_and_classify_objects(frame):
 
     return frame, waste_types
 
+def list_available_cameras(max_cams=5):
+    available = []
+    for i in range(max_cams):
+        cap = cv2.VideoCapture(i)
+        if cap.read()[0]:
+            available.append(i)
+        cap.release()
+    return available
 
-# UI
+# Streamlit UI
+st.set_page_config(page_title="WasteSort AI", layout="wide")
 st.title("♻️ WasteSort AI")
-st.write("Upload an image, video, or use your **Live Camera** to classify waste into dry or wet types.")
+st.write("Classify waste into Dry and Wet types using AI with images, video, or live camera.")
 
-option = st.radio("Choose an option:", ["📂 Upload Image", "📹 Upload Video", "📸 Live Camera"], index=0)
-
-# Session state to track detection status and waste counts
-if "detection_active" not in st.session_state:
-    st.session_state.detection_active = False
-if "waste_counts" not in st.session_state:
-    st.session_state.waste_counts = {"Wet Waste": 0, "Dry Waste": 0}
+option = st.radio("Choose input type:", ["📂 Upload Image", "📹 Upload Video", "📸 Live Camera"], index=0)
 
 detected_waste_counter = Counter()
 
-# For Live Camera Selection (if multiple cameras available)
-camera_index = 0  # Default
-if option == "📸 Live Camera":
-    st.write("### Select Camera")
-    cam_options = {
-        "Default (0)": 0,
-        "External (1)": 1,
-        "Try Front (2)": 2,
-        "Try Rear (3)": 3,
-    }
-    camera_choice = st.selectbox("Available Cameras", list(cam_options.keys()))
-    camera_index = cam_options[camera_choice]
-
 if option == "📂 Upload Image":
     uploaded_image = st.file_uploader("Upload an image...", type=["jpg", "jpeg", "png"])
-    if uploaded_image:
+    if uploaded_image and st.button("🔍 Detect & Predict"):
         file_bytes = np.asarray(bytearray(uploaded_image.read()), dtype=np.uint8)
         img = cv2.imdecode(file_bytes, cv2.IMREAD_COLOR)
-
-        if st.button("🔍 Detect & Predict"):
-            img_out, waste_types = detect_and_classify_objects(img)
-            detected_waste_counter.update([wt[0] for wt in waste_types])
-            st.image(img_out, channels="BGR", use_container_width=True)
-            st.write("### Waste Detected:")
-            for waste, conf in waste_types:
-                st.write(f"✅ {waste}: {conf:.2f}% confidence")
+        output_img, waste_types = detect_and_classify_objects(img)
+        detected_waste_counter.update([wt[0] for wt in waste_types])
+        st.image(output_img, channels="BGR", use_container_width=True)
+        st.write("### Waste Detected:")
+        for waste, conf in waste_types:
+            st.write(f"✅ {waste}: {conf:.2f}%")
 
 elif option == "📹 Upload Video":
-    uploaded_video = st.file_uploader("Upload a video...", type=["mp4", "avi", "mov", "mkv"])
+    uploaded_video = st.file_uploader("Upload a video...", type=["mp4", "avi", "mov"])
     if uploaded_video:
         tfile = tempfile.NamedTemporaryFile(delete=False)
         tfile.write(uploaded_video.read())
         cap = cv2.VideoCapture(tfile.name)
         stframe = st.empty()
-        stop_button = st.button("⏹ Stop Detecting", key="stop_video")
+        stop = st.button("⏹ Stop Video")
 
         while cap.isOpened():
             ret, frame = cap.read()
-            if not ret or st.session_state.get("stop_video", False):
+            if not ret or stop:
                 break
-            frame_out, waste_types = detect_and_classify_objects(frame)
+            output_frame, waste_types = detect_and_classify_objects(frame)
             detected_waste_counter.update([wt[0] for wt in waste_types])
-            stframe.image(frame_out, channels="BGR", use_container_width=True)
+            stframe.image(output_frame, channels="BGR", use_container_width=True)
 
 elif option == "📸 Live Camera":
-    run_detection = st.button("Start Detection")
-    stop_button = st.button("⏹ Stop Detection")
-    if run_detection:
-        st.session_state.detection_active = True
+    st.write("### Available Cameras")
+    available_cams = list_available_cameras()
+    cam_index = st.selectbox("Select Camera", available_cams, index=0)
 
-    if stop_button:
-        st.session_state.detection_active = False
-        st.write("Detection stopped.")
+    if st.button("Start Live Detection"):
+        cap = cv2.VideoCapture(cam_index)
+        stframe = st.empty()
+        stop = st.button("⏹ Stop Live")
 
-    if st.session_state.detection_active:
-        capture = cv2.VideoCapture(camera_index)
-        while True:
-            ret, frame = capture.read()
-            if not ret:
-                st.write("Error with camera feed.")
+        while cap.isOpened():
+            ret, frame = cap.read()
+            if not ret or stop:
                 break
-            frame_out, waste_types = detect_and_classify_objects(frame)
+            output_frame, waste_types = detect_and_classify_objects(frame)
             detected_waste_counter.update([wt[0] for wt in waste_types])
-            st.image(frame_out, channels="BGR", use_container_width=True)
+            stframe.image(output_frame, channels="BGR", use_container_width=True)
+        cap.release()
 
-# Display statistics
-st.write("### Waste Statistics")
-st.write(f"🟢 Wet Waste: {detected_waste_counter['Wet Waste']} items")
-st.write(f"🔵 Dry Waste: {detected_waste_counter['Dry Waste']} items")
+# Show final stats
+st.write("### 🧾 Waste Statistics")
+st.write(f"🟢 Wet Waste: {detected_waste_counter['Wet Waste']}")
+st.write(f"🔵 Dry Waste: {detected_waste_counter['Dry Waste']}")
