@@ -3,13 +3,26 @@ import tensorflow as tf
 import numpy as np
 import cv2
 import keras
-from vit_keras import vit
+import sys
+import types
 import tempfile
 import logging
 import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
+
+# ✅ Patch keras.src.engine.keras_tensor for compatibility with vit-keras and tf-addons
+try:
+    keras_tensor = tf.keras.__internal__.keras_tensor  # For TF ≥ 2.11
+    sys.modules["keras.src.engine"] = types.SimpleNamespace(keras_tensor=keras_tensor)
+except Exception as e:
+    logging.warning(f"Could not patch keras.src.engine: {e}")
+
+from vit_keras import vit
+
+# ✅ Streamlit UI setup
 st.set_page_config(page_title="♻️ WasteSort AI", layout="centered")
+
 # Disable GPU for TensorFlow
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
