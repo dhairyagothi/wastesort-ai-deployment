@@ -136,21 +136,23 @@ elif option == "📹 Upload Video":
 elif option == "📸 Live Camera":
     st.write("### Available Cameras")
     available_cams = list_available_cameras()
-    cam_index = st.selectbox("Select Camera", available_cams, index=0)
+    if available_cams:
+        cam_index = st.selectbox("Select Camera", available_cams, index=0)
+        if st.button("Start Live Detection"):
+            cap = cv2.VideoCapture(cam_index)
+            stframe = st.empty()
+            stop = st.button("⏹ Stop Live")
 
-    if st.button("Start Live Detection"):
-        cap = cv2.VideoCapture(cam_index)
-        stframe = st.empty()
-        stop = st.button("⏹ Stop Live")
-
-        while cap.isOpened():
-            ret, frame = cap.read()
-            if not ret or stop:
-                break
-            output_frame, waste_types = detect_and_classify_objects(frame)
-            detected_waste_counter.update([wt[0] for wt in waste_types])
-            stframe.image(output_frame, channels="BGR", use_container_width=True)
-        cap.release()
+            while cap.isOpened():
+                ret, frame = cap.read()
+                if not ret or stop:
+                    break
+                output_frame, waste_types = detect_and_classify_objects(frame)
+                detected_waste_counter.update([wt[0] for wt in waste_types])
+                stframe.image(output_frame, channels="BGR", use_container_width=True)
+            cap.release()
+    else:
+        st.write("❌ No cameras found. Please connect a camera and refresh the page.")
 
 # Show final stats
 st.write("### 🧾 Waste Statistics")
