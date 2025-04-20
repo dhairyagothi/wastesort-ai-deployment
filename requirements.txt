@@ -1,38 +1,8 @@
-# Core
-streamlit==1.33.0
-
-# Torch + torchvision for ViT
-torch==2.0.1
-torchvision==0.15.2
-torchaudio==2.0.2
-
-# For Vision Transformer (ViT)
-transformers==4.39.3
-scipy==1.10.1
-scikit-learn==1.2.2
-
-# For YOLOv8 (Ultralytics)
-ultralytics==8.1.28
-
-# Computer vision + image handling
-opencv-python==4.7.0.72
-Pillow==9.5.0
-imageio==2.33.1
+streamlit==1.32.2
+tensorflow==2.11.0
+vit-keras==0.1.0
+opencv-python-headless==4.9.0.80
 matplotlib==3.7.1
-numpy==1.24.3
-
-# Fast file handling
-python-multipart==0.0.9
-requests==2.31.0
-
-# Live camera support
-pyusb==1.2.1
-pyserial==3.5
-
-# Optional for Streamlit UI enhancements
-streamlit-option-menu==0.3.6
-streamlit-camera-input-live==0.2.0
-streamlit-lottie==0.0.5
-
-# Video processing
-imageio-ffmpeg==0.4.9
+numpy==1.23.5
+ultralytics==8.0.238
+Pillow==9.4.0
