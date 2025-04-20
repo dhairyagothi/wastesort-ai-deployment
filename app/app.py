@@ -2,7 +2,6 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 import cv2
-import keras
 import sys
 import types
 import tempfile
@@ -11,19 +10,34 @@ import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
 
-# ✅ Patch keras.src.engine.keras_tensor for compatibility with vit-keras and tf-addons
+# Import TensorFlow Keras
 try:
-    # Check if the internal keras_tensor is accessible
-    keras_tensor = tf.keras.__internal__.keras_tensor  # For TF >= 2.11
-    sys.modules["keras.src.engine"] = types.SimpleNamespace(keras_tensor=keras_tensor)
-except Exception as e:
-    logging.warning(f"Could not patch keras.src.engine: {e}")
+    # TensorFlow >= 2.11
+    from tensorflow.keras import backend as K
+    import tensorflow.keras as keras
+except ImportError:
+    # For older TensorFlow versions or if standalone Keras is used
+    import keras  # Fallback to standalone Keras
 
-# Import Vit-keras after patching
+# Fix for Keras Tensor import compatibility with vit-keras
+try:
+    # For TensorFlow >= 2.11, simulate the keras.src.engine import structure
+    keras_tensor = tf.keras.backend  # This should work for TensorFlow >= 2.11
+    sys.modules["keras.src.engine"] = types.SimpleNamespace(keras_tensor=keras_tensor)
+except AttributeError:
+    # Fallback for standalone Keras or older TensorFlow
+    from keras.engine import keras_tensor
+    sys.modules["keras.src.engine"] = types.SimpleNamespace(keras_tensor=keras_tensor)
+    logging.warning("Using fallback method for keras.src.engine simulation.")
+
+# Import vit_keras after patching
 from vit_keras import vit
 
 # ✅ Streamlit UI setup
 st.set_page_config(page_title="♻️ WasteSort AI", layout="centered")
+
+# Your existing code continues...
+
 
 
 # Disable GPU for TensorFlow
