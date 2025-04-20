@@ -1,11 +1,7 @@
 streamlit
 tensorflow
-keras
+tensorflow-addons
 vit-keras
 ultralytics
-tensorflow-addons
 opencv-python
-numpy
 matplotlib
-Pillow
-scipy
