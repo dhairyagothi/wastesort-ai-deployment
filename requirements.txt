@@ -3,10 +3,9 @@ torchvision
 Pillow
 opencv-python
 streamlit
-tensorflow-cpu
-tensorflow-addons
-keras
+tensorflow-cpu==2.13.0  # Make sure to use a compatible version
+keras==2.13.0           # Match Keras version with TensorFlow version
 numpy
-vit-keras
+vit-keras==0.1.2         # Ensure using a compatible Vit-Keras version
 ultralytics
 streamlit-webrtc
