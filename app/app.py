@@ -2,45 +2,18 @@ import streamlit as st
 import tensorflow as tf
 import numpy as np
 import cv2
-import sys
-import types
+import keras
+from vit_keras import vit  # For Vision Transformer model
 import tempfile
 import logging
 import matplotlib.pyplot as plt
 from collections import Counter
 from ultralytics import YOLO
 
-# Import TensorFlow Keras
-try:
-    # TensorFlow >= 2.11
-    from tensorflow.keras import backend as K
-    import tensorflow.keras as keras
-except ImportError:
-    # For older TensorFlow versions or if standalone Keras is used
-    import keras  # Fallback to standalone Keras
-
-# Fix for Keras Tensor import compatibility with vit-keras
-try:
-    # For TensorFlow >= 2.11, simulate the keras.src.engine import structure
-    keras_tensor = tf.keras.backend  # This should work for TensorFlow >= 2.11
-    sys.modules["keras.src.engine"] = types.SimpleNamespace(keras_tensor=keras_tensor)
-except AttributeError:
-    # Fallback for standalone Keras or older TensorFlow
-    from keras.engine import keras_tensor
-    sys.modules["keras.src.engine"] = types.SimpleNamespace(keras_tensor=keras_tensor)
-    logging.warning("Using fallback method for keras.src.engine simulation.")
-
-# Import vit_keras after patching
-from vit_keras import vit
-
-# ✅ Streamlit UI setup
+# Streamlit page configuration
 st.set_page_config(page_title="♻️ WasteSort AI", layout="centered")
 
-# Your existing code continues...
-
-
-
-# Disable GPU for TensorFlow
+# Disable GPU for TensorFlow (if needed)
 import os
 os.environ["CUDA_VISIBLE_DEVICES"] = "-1"
 
@@ -69,25 +42,38 @@ waste_info = {
 @st.cache_resource
 def load_vit_model():
     try:
+        import keras
         from vit_keras.layers import ClassToken, TransformerBlock
-        with tf.keras.utils.custom_object_scope({'ClassToken': ClassToken, 'TransformerBlock': TransformerBlock}):
-            model = tf.keras.models.load_model("final_vit_waste_classification_model.h5", compile=False)
+
+        # Required to register custom layers used in vit-keras
+        with tf.keras.utils.custom_object_scope({
+            'ClassToken': ClassToken,
+            'TransformerBlock': TransformerBlock
+        }):
+            model = keras.models.load_model("final_vit_waste_classification_model.h5", compile=False)
+
         return model
+
     except Exception as e:
         st.error(f"ViT model loading failed: {e}")
         return None
-
+    
+    
+# Function to load YOLOv8 model
 @st.cache_resource
 def load_yolo_model():
     try:
-        return YOLO("yolov8n.pt")
+        model = YOLO("yolov8n.pt")  # Path to your YOLOv8 model
+        return model
     except Exception as e:
         st.error(f"YOLO model loading failed: {e}")
         return None
 
+# Load models
 vit_model = load_vit_model()
 yolo_model = load_yolo_model()
 
+# Function to classify waste using ViT model
 def classify_waste(image):
     try:
         image = cv2.cvtColor(image, cv2.COLOR_BGR2RGB)
@@ -102,6 +88,7 @@ def classify_waste(image):
         logging.error(f"Classification error: {e}")
         return "Unknown", 0.0
 
+# Function to detect and classify objects using YOLO
 def detect_and_classify_objects(frame):
     waste_types = []
     results = yolo_model(frame)
@@ -130,7 +117,7 @@ def detect_and_classify_objects(frame):
 
     return frame, waste_types
 
-
+# Streamlit UI setup
 st.title("♻️ WasteSort AI")
 st.write("Classify waste into **dry** and **wet** using AI. Upload images/videos or use your webcam (locally only).")
 
