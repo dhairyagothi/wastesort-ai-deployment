@@ -3,6 +3,7 @@ tensorflow
 keras
 vit-keras
 ultralytics
+tensorflow-addons
 opencv-python
 numpy
 matplotlib
