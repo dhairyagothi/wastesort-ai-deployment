@@ -1,7 +1,7 @@
-streamlit>=1.25.0
-tensorflow>=2.10.1,<2.11
-tensorflow-addons==0.18.0
+streamlit
+tensorflow
+tensorflow-addons
 opencv-python
 matplotlib
-ultralytics==8.0.20
-vit-keras==0.1.2
+ultralytics
+vit-keras 
