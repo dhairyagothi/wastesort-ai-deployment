@@ -1,5 +1,5 @@
-streamlit==1.25.0
-tensorflow==2.10.1
+streamlit>=1.25.0
+tensorflow>=2.10.1,<2.11
 tensorflow-addons==0.18.0
 opencv-python
 matplotlib

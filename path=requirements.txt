@@ -1,7 +1,0 @@
-streamlit==1.25.0
-tensorflow==2.10.1
-tensorflow-addons==0.18.0
-opencv-python==4.5.5.64
-matplotlib==3.5.1
-ultralytics==8.0.20
-vit-keras==0.1.2 
