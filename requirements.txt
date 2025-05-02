@@ -1,7 +1,8 @@
 streamlit==1.24.0
 tensorflow==2.9.0
 tensorflow-addons==0.18.0
+protobuf==3.19.6
 opencv-python
 matplotlib
 ultralytics
-vit-keras 
+vit-keras
