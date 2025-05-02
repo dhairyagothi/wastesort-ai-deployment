@@ -34,4 +34,4 @@ if vit_model:
     st.success("✅ ViT model loaded successfully!")
 
 if yolo_model:
-    st.success("✅ YOLOv8 model loaded successfully!")
+    st.success("✅ YOLOv8 model loaded successfully!") 

@@ -1,7 +1,7 @@
-streamlit
-tensorflow
-tensorflow-addons
+streamlit==1.25.0
+tensorflow==2.10.1
+tensorflow-addons==0.18.0
 opencv-python
 matplotlib
 ultralytics
-vit-keras 
+vit-keras
