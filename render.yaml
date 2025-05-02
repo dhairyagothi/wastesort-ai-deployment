@@ -1,0 +1,5 @@
+services:
+  - type: web
+    name: streamlit-tf-app
+    env: docker
+    plan: free
